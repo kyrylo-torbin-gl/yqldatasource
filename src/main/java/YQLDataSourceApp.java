@@ -1,19 +1,22 @@
-import net.sf.jasperreports.engine.JRDataSource;
-import net.sf.jasperreports.engine.JRException;
-import net.sf.jasperreports.engine.JRField;
+import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.data.JRXmlDataSource;
-import net.sf.jasperreports.engine.design.JRDesignField;
+import net.sf.jasperreports.engine.query.JRXPathQueryExecuterFactory;
+import net.sf.jasperreports.engine.util.AbstractSampleApp;
+import net.sf.jasperreports.engine.util.JRXmlUtils;
+import org.w3c.dom.Document;
 
+import java.awt.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.*;
 
 /**
  * @author kyrylo.torbin
  * @version 1.0 5/6/15
  */
-public class YQLDataSourceApp {
+public class YQLDataSourceApp extends AbstractSampleApp {
 
     private static final String BASE_URL = "http://query.yahooapis.com/v1/public/yql?q=";
     
@@ -23,19 +26,85 @@ public class YQLDataSourceApp {
     
     public static void main(String[] args) throws IOException, JRException {
 
-        final String fullUrlStr = BASE_URL + URLEncoder.encode(QUERY, "UTF-8");
+        main(new YQLDataSourceApp(), new String[] {"test"});
+    }
 
-        final URL fullUrl = new URL(fullUrlStr);
-        final InputStream is = fullUrl.openStream();
+    @Override
+    public void test() throws JRException {
 
-        final JRDataSource dataSource = new JRXmlDataSource(is, XPATH);
+        fill1();        // Uses provided XPATH
+//        fill2();      // Uses XPATH from PlacesReport.jrxml
+        pdf();
+        xml();
+    }
 
-        final JRField field = new JRDesignField();
-        field.setDescription("name");
-        while (dataSource.next()) {
-            System.out.println(dataSource.getFieldValue(field));
+    public void fill1() throws JRException {
+
+        final long start = System.currentTimeMillis();
+
+        JasperCompileManager.compileReportToFile("reports/PlacesReport.jrxml");
+
+        final String fullUrlStr;
+        try {
+            fullUrlStr = BASE_URL + URLEncoder.encode(QUERY, "UTF-8");
+            final URL fullUrl = new URL(fullUrlStr);
+            final InputStream is = fullUrl.openStream();
+
+            JasperFillManager.fillReportToFile("reports/PlacesReport.jasper", new HashMap<String, Object>(), new JRXmlDataSource(is, XPATH));
+
+            is.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
-        is.close();
+        final long end = System.currentTimeMillis();
+        System.out.println("Filling time: " + (end - start) + " ms");
+    }
+
+    public void fill2() throws JRException {
+
+        final long start = System.currentTimeMillis();
+
+        JasperCompileManager.compileReportToFile("reports/PlacesReport.jrxml");
+
+        final String fullUrlStr;
+        try {
+            fullUrlStr = BASE_URL + URLEncoder.encode(QUERY, "UTF-8");
+            final URL fullUrl = new URL(fullUrlStr);
+            final InputStream is = fullUrl.openStream();
+
+            final Map<String, Object> params = new HashMap<String, Object>();
+            final Document document = JRXmlUtils.parse(is);
+            params.put(JRXPathQueryExecuterFactory.PARAMETER_XML_DATA_DOCUMENT, document);
+            params.put(JRXPathQueryExecuterFactory.XML_DATE_PATTERN, "yyyy-MM-dd");
+            params.put(JRXPathQueryExecuterFactory.XML_NUMBER_PATTERN, "#,##0.##");
+            params.put(JRXPathQueryExecuterFactory.XML_LOCALE, Locale.ENGLISH);
+            params.put(JRParameter.REPORT_LOCALE, Locale.US);
+
+            JasperFillManager.fillReportToFile("reports/PlacesReport.jasper", params);
+
+            is.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        final long end = System.currentTimeMillis();
+        System.out.println("Filling time: " + (end - start) + " ms");
+    }
+
+    public void pdf() throws JRException
+    {
+        final long start = System.currentTimeMillis();
+        JasperExportManager.exportReportToPdfFile("reports/PlacesReport.jrprint");
+        final long end = System.currentTimeMillis();
+        System.out.println("PDF report created in " + (end - start) + " ms");
+    }
+
+    public void xml() throws JRException
+    {
+        final long start = System.currentTimeMillis();
+        JasperExportManager.exportReportToXmlFile("reports/PlacesReport.jrprint", false);
+        final long end = System.currentTimeMillis();
+        System.out.println("XML report created in " + (end - start) + " ms");
     }
 }

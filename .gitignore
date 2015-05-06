@@ -1,3 +1,7 @@
 /.idea
 /yqldatasource.iml
 /target
+/reports/PlacesReport.jasper
+/reports/PlacesReport.jrprint
+/reports/PlacesReport.jrpxml
+/reports/PlacesReport.pdf
