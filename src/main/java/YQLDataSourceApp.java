@@ -1,11 +1,7 @@
 import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.data.JRXmlDataSource;
-import net.sf.jasperreports.engine.query.JRXPathQueryExecuterFactory;
 import net.sf.jasperreports.engine.util.AbstractSampleApp;
-import net.sf.jasperreports.engine.util.JRXmlUtils;
-import org.w3c.dom.Document;
 
-import java.awt.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -32,8 +28,8 @@ public class YQLDataSourceApp extends AbstractSampleApp {
     @Override
     public void test() throws JRException {
 
-        fill1();        // Uses provided XPATH
-//        fill2();      // Uses XPATH from PlacesReport.jrxml
+//        fill1();        // Uses provided XPATH
+        fill2();      // Uses XPATH from PlacesReport.jrxml
         pdf();
         xml();
     }
@@ -66,27 +62,7 @@ public class YQLDataSourceApp extends AbstractSampleApp {
         final long start = System.currentTimeMillis();
 
         JasperCompileManager.compileReportToFile("reports/PlacesReport.jrxml");
-
-        final String fullUrlStr;
-        try {
-            fullUrlStr = BASE_URL + URLEncoder.encode(QUERY, "UTF-8");
-            final URL fullUrl = new URL(fullUrlStr);
-            final InputStream is = fullUrl.openStream();
-
-            final Map<String, Object> params = new HashMap<String, Object>();
-            final Document document = JRXmlUtils.parse(is);
-            params.put(JRXPathQueryExecuterFactory.PARAMETER_XML_DATA_DOCUMENT, document);
-            params.put(JRXPathQueryExecuterFactory.XML_DATE_PATTERN, "yyyy-MM-dd");
-            params.put(JRXPathQueryExecuterFactory.XML_NUMBER_PATTERN, "#,##0.##");
-            params.put(JRXPathQueryExecuterFactory.XML_LOCALE, Locale.ENGLISH);
-            params.put(JRParameter.REPORT_LOCALE, Locale.US);
-
-            JasperFillManager.fillReportToFile("reports/PlacesReport.jasper", params);
-
-            is.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        JasperFillManager.fillReportToFile("reports/PlacesReport.jasper", new HashMap<String, Object>());
 
         final long end = System.currentTimeMillis();
         System.out.println("Filling time: " + (end - start) + " ms");
